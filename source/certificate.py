@@ -290,7 +290,6 @@ class Certificate:
             return path
 
     def execute_command(self, cmd):
-        self.log(cmd)
         call(cmd, shell=True, stdout=DEV_NULL, stderr=DEV_NULL)
 
     def read_file(self, filename):
@@ -379,7 +378,6 @@ class Certificate:
 
         target_path = self.get_target_path()
 
-        self.log("calling ensure with {0}".format(target_path))
         self.ensure_directory_exists(target_path)
 
         os.chdir(target_path)
@@ -390,34 +388,25 @@ class Certificate:
             changes.append("Created server cnf for {0}.".format(self.certname))
             changed = True
 
-        self.log("here {0}".format(os.path.exists(self.certname + ".key.pem")))
         if not os.path.exists(self.certname + ".key.pem"):
             self.generate_private_key()
             changes.append("Created private key for {0}.".format(self.certname))
             changed = True
 
-        self.log("here2")
-        self.log("here {0}".format(os.path.exists(self.certname + ".req.pem")))
         if not os.path.exists(self.certname + ".req.pem"):
             self.generate_certificate_request()
             changes.append("Created certificate request for {0}".format(self.certname))
             changed = True
 
-        self.log("here3")
-        self.log("here {0}".format(os.path.exists(self.certname + ".cert.pem.pub")))
         if not os.path.exists(self.certname + ".cert.pem.pub"):
             self.sign_certificate_request(target_path)
             changes.append("Signed certificate for {0}".format(self.certname))
             changed = True
 
-        self.log("here4")
-        self.log("here {0}".format(os.path.exists(self.certname + ".keycert.pem")))
         if not os.path.exists(self.certname + ".keycert.pem"):
             self.create_key_cert_PEM()
             changes.append("Created key-cert PEM file for {0}".format(self.certname))
 
-        self.log("here5")
-        self.log("here {0}".format(os.path.exists(self.certname + ".keycert.p12")))
         if not os.path.exists(self.certname + ".keycert.p12"):
             self.export_key_as_PKCS12()
             changes.append("Created PKCS12 version of the Private Key/Certificate Pair for {0}".format(self.certname))
