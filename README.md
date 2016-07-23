@@ -17,7 +17,8 @@ In order to test the Python module outside of Ansible, you need to remove the mo
 
 ## How to use
 
-First you need to setup a CA in the specific format these scripts are expecting:
+First you need to setup a CA in the specific format these scripts are expecting.  By default the CA cert will be left intact if it exists.  The `force` option will when set to ***true*** will overwrite the ca.
+
 
 ```yaml
 ---
@@ -35,10 +36,10 @@ To create a certificate, you simply need to reference the CA and provide the ess
 ---
 
 - name: Create a Server Cert
-  certificate: cadir="/etc/certs" hostname="server.example.com" subj="/DC=com/DC=example/CN=server/" p12password="{{some_env_var}}"
+  certificate: cadir="/etc/certs" certname="server.example.com" subj="/DC=com/DC=example/CN=server/" p12password="{{some_env_var}}"
 
 - name: Create a Client Cert
-  certificate: cadir="/etc/certs" hostname="client.example.com" subj="/DC=com/DC=example/CN=client/" p12password="{{some_env_var}}" certtype="client"
+  certificate: cadir="/etc/certs" certname="client.example.com" subj="/DC=com/DC=example/CN=client/" p12password="{{some_env_var}}" certtype="client"
 
 ```
 
@@ -46,7 +47,7 @@ Note: the default `certtype` is **server**, so you will need to specify **client
 
 1.  `{{hostname}}.key.pem` - the private key.
 2.  `{{hostname}}.req.pem` - the signing request.
-3.  `{{hostname}}.cert.pem` - the certificate signed by the CA.
+3.  `{{hostname}}.cert.pem.pub` - the certificate signed by the CA.
 4.  `{{hostname}}.keycert.pem` - a file containing both the private key and certificate (we found this necessary for some applications using SSL).
 5.  `{{hostname}}.keycert.p12` - the PKCS12 version of the key + cert pair.
 
@@ -80,16 +81,18 @@ This will cause the CA directory to be deleted (the script doesn't care that it 
 ```yaml
 ---
 
-- name: Create a java keystore 
-  keytool: cadir="/etc/certs" certname="host1.example.com" store_password='changeit' hosts_to_trust="host1.example.com" certtype="keystore" src_password='changeit'
-
 ```
+The keytool utility is used for creating truststores and keystores for users and servers.   This requires the certificates have been created with the `certificate` module:
 
 ```yaml
 ---
 
-- name: Create a java trustore and trust the server hosts
+- name: Create a java server trustore and trust the server hosts
   keytool: cadir="/etc/certs" certname="host1.example.com" store_password='changeit' hosts_to_trust="host1.example.com"
+
+- name: Create a java server keystore 
+  keytool: cadir="/etc/certs" certname="host1.example.com" store_password='changeit' hosts_to_trust="host1.example.com" certtype="keystore" src_password='changeit'
+
 
 ```
 
