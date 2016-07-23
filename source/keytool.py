@@ -2,22 +2,25 @@
 from subprocess import call
 import os
 
-TMPL_GEN_TS = "keytool -import -noprompt -alias {0} -file {1} -keystore {2} -storepass:file {3}.storepass"
+TMPL_GEN_TS = "keytool -import -noprompt -alias {0} -file {1} -keystore {2} -storepass {3}"
+TMPL_GEN_SS = "keytool -importkeystore -noprompt -alias {0} -srckeystore {1} -destkeystore {2}  -srcstoretype PKCS12   -deststorepass {3} -destkeypass {3} -srcstorepass {4}"
+
 DEV_NULL = open('/dev/null', 'w')
 
 class Keytool:
 
 
-    def __init__(self, cadir, certname, store_password, hosts_to_trust, certtype):
+    def __init__(self, cadir, certname, store_password, hosts_to_trust, certtype, src_password):
 
         self.cadir = cadir
         self.certname = certname
         self.certtype = certtype
         self.store_password = store_password
+        self.src_password = src_password
         self.hosts_to_trust = hosts_to_trust
 
     def log(self, msg):
-        logifle = open('/private/tmp/keytoo.log', 'a')
+        logifle = open('/tmp/keytoo.log', 'a')
         logifle.write(msg)
         logifle.write("\n")
         logifle.write("\n")
@@ -41,7 +44,7 @@ class Keytool:
 
     def get_truststore_path(self, certtype):
         if certtype == "keystore":
-          return "keystores" + os.sep + self.certname + ".keystore.jks"
+          return self.cadir + "/keystores" + os.sep + self.certname + ".keystore.jks"
         else:
           return "truststores" + os.sep + self.certname + ".trust.jks"
 
@@ -49,8 +52,14 @@ class Keytool:
         return self.certname + ".storepass"
 
     def resolve_certificate(self, host):
-        server = self.cadir + "/server/{0}/{0}.cert.pem.pub".format(host)
-        client = self.cadir + "/client/{0}.cert.pem.pub".format(host)
+        server = ""
+        client = ""
+        if self.certtype == "keystore":
+          server = self.cadir + "/server/{0}/{0}.keycert.p12".format(host)
+          client = self.cadir + "/client/{0}.keycert.p12".format(host)
+        else:
+          server = self.cadir + "/server/{0}/{0}.cert.pem.pub".format(host)
+          client = self.cadir + "/client/{0}.keycert.pem".format(host)
         if os.path.exists(server):
             return server
         elif os.path.exists(client):
@@ -69,7 +78,6 @@ class Keytool:
 
         os.chdir(self.cadir)
 
-
         if self.certtype == "truststore":
           self.ensure_directory_exists("truststores")
         else:
@@ -84,22 +92,25 @@ class Keytool:
             with open(storepass_path, "w") as storepass:
                 storepass.write(self.store_password)
 
-
             try:
 
                 if self.certtype == "truststore":
-                  cmd = TMPL_GEN_TS.format("CA", "cacert.pem", truststore_path, self.certname)
+                  cmd = TMPL_GEN_TS.format("CA", self.cadir + "/cacert.pem", truststore_path, self.store_password)
                   self.execute_command(cmd)
                   changed = True
                   changes.append("Added the CA Certificate to the truststore.")
-
 
                 for host in self.hosts_to_trust:
 
                     hostcert = self.resolve_certificate(host)
 
+                    cmd = ""
                     if not hostcert is None:
-                        cmd = TMPL_GEN_TS.format(host, hostcert, truststore_path, self.certname)
+                        if self.certtype == "keystore":
+                          cmd = TMPL_GEN_SS.format(host, hostcert, truststore_path, self.store_password, self.src_password)
+                        else:
+                          cmd = TMPL_GEN_TS.format(host, hostcert, truststore_path, self.store_password)
+
                         changes.append("Executing: '{0}'".format(cmd))
                         self.execute_command(cmd)
                         changed = True
@@ -144,5 +155,8 @@ class Keytool:
         os.chdir(CURDIR)
 
         return dict(success=True, changed=changed, changes=changes, msg="")
+
+
+
 
 

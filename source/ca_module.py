@@ -8,7 +8,8 @@ def main():
     BASE_MODULE_ARGS = dict(
         certdir = dict(default="/etc/certs"),
         subj = dict(default="/DC=com/DC=example/CN=CA/"),
-        state = dict(default="present", choices=["present", "absent"])
+        state = dict(default="present", choices=["present", "absent"]),
+        force = dict(default="false", choices=["true", "false"])
     )
 
     module = AnsibleModule(
@@ -16,7 +17,11 @@ def main():
         supports_check_mode=True
     )
 
-    ca = CA(module.params["certdir"], module.params["subj"])
+    ca = CA(module.params["certdir"], module.params["subj"], module.params["force"])
+
+    if not ca.force:
+       if ca.check_if_ca_exists():
+         module.exit_json(dict(changed=false, skip_reason="Conditional check failed", skipped=true));
 
     isValid = ca.validate_setup()
 

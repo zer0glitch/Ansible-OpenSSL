@@ -11,7 +11,8 @@ def main():
         store_password = dict(required=True),
         hosts_to_trust = dict(required=True, type="list"),
         state = dict(default="present", choices=["present", "absent"]),
-        certtype = dict(required=False, default="truststore", choices=["truststore","keystore"])
+        certtype = dict(required=False, default="truststore", choices=["truststore","keystore"]),
+        src_password = dict(required=False)
     )
 
     module = AnsibleModule(
@@ -25,6 +26,7 @@ def main():
         module.params["store_password"],
         module.params["hosts_to_trust"],
         module.params["certtype"],
+        module.params["src_password"],
     )
 
     isValid = keytool.validate()
