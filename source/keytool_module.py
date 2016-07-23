@@ -9,7 +9,7 @@ def main():
         cadir = dict(default="/etc/certs"),
         certname = dict(required=True),
         store_password = dict(required=True),
-        hosts_to_trust = dict(required=True, type="list"),
+        hosts_to_trust = dict(required=False, type="list"),
         state = dict(default="present", choices=["present", "absent"]),
         certtype = dict(required=False, default="truststore", choices=["truststore","keystore"]),
         src_password = dict(required=False)

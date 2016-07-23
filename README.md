@@ -76,7 +76,22 @@ Deleting the CA functions similarly:
 
 This will cause the CA directory to be deleted (the script doesn't care that it didn't create the directory, so suck it up).
 
-Finally, it's worth mentioning that there is another tool to generate a Java Truststore from an OpenSSL PEM.
+
+```yaml
+---
+
+- name: Create a java keystore 
+  keytool: cadir="/etc/certs" certname="host1.example.com" store_password='changeit' hosts_to_trust="host1.example.com" certtype="keystore" src_password='changeit'
+
+```
+
+```yaml
+---
+
+- name: Create a java trustore and trust the server hosts
+  keytool: cadir="/etc/certs" certname="host1.example.com" store_password='changeit' hosts_to_trust="host1.example.com"
+
+```
 
 ## License
 
