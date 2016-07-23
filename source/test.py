@@ -8,7 +8,7 @@ line = "----------------------------------------------"
 
 cadir = "./testca"
 
-ca = CA(cadir, "/CN=Test CA/")
+ca = CA(cadir, "/CN=Test CA/", True)
 
 ca.validate_setup()
 
@@ -18,18 +18,18 @@ print "CA present"
 print line
 print r1
 
-def createCert(certname, subj, password, isServerCert):
+def createCert(certname, subj, password, isServerCert, subjAltName):
     print line
     print "Creating certificate for: {}".format(certname)
-    cert = Certificate(cadir, certname, subj, password, isServerCert)
+    cert = Certificate(cadir, certname, subj, password, isServerCert, subjAltName)
     print cert.create_certificate()
     return cert
 
 
-createCert("test.openampere.com", "/CN=Test/", "abc123!@#$", True)
-c1 = createCert("client.openampere.com", "/CN=Client/", "asdfaer13", False)
-createCert("client2.openampere.com", "/DC=com/DC=openampere/DC=test/CN=Client2", "asdf", False)
-s2 = createCert("test2.openampere.com", "/CN=Test 2", "asdf987", True)
+createCert("test.openampere.com", "/CN=Test/", "abc123!@#$", True, "DNS.1=client,DNS.2=test.openamepere.com,IP.1=192.168.1.2")
+c1 = createCert("client.openampere.com", "/CN=Client/", "asdfaer13", False, "")
+createCert("client2.openampere.com", "/DC=com/DC=openampere/DC=test/CN=Client2", "asdf", False, "")
+s2 = createCert("test2.openampere.com", "/CN=Test 2", "asdf987", True, "DNS.1=client,DNS.2=test.openamepere.com,IP.1=192.168.1.2")
 
 print line
 print "Removing cert for client.openampere.com"
