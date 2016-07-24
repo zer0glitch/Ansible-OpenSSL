@@ -4,6 +4,8 @@
 import os
 from subprocess import call
 
+import time
+
 
 KEY_STRENGTH = 2048
 DAYS_VALID  = 3653 # ~10 years
@@ -13,8 +15,8 @@ TMPL_GEN_REQ =  "openssl req -config {0}/openssl.cnf -new -key {1}.key.pem -out 
 TMPL_SIGN_REQ = "openssl ca -config {0}/openssl.cnf -in {1}/{2}.req.pem -out {1}/{2}.cert.pem.pub  -batch -extensions {3}"
 
 TMPL_PKCS12 =   "openssl pkcs12 -export -out {0}.keycert.p12 -name {0} -chain -in {0}.cert.pem.pub -inkey {0}.key.pem -passout file:{1} -CApath {2}"
-TMPL_REVOKE = "openssl ca -config {0}/openssl.cnf -revoke {1} -keyfile private/cakey.pem -cert cacert.pem"
-TMPL_GEN_CRL = "openssl ca -config {0}/openssl.cnf -gencrl -keyfile private/cakey.pem -cert cacert.pem -out crl.pem"
+TMPL_REVOKE = "openssl ca -config {0}/openssl.cnf -revoke {1} -keyfile {0}/private/cakey.pem -cert {0}/cacert.pem"
+TMPL_GEN_CRL = "openssl ca -config {0}/openssl.cnf -gencrl -keyfile {0}/private/cakey.pem -cert {0}/cacert.pem -out crl.pem"
 DEV_NULL = open('/dev/null', 'w')
 
 
@@ -211,17 +213,6 @@ authorityKeyIdentifier=keyid,issuer:always
 
 subjectAltName = {2}
 
-
-# Copy subject details
-# issuerAltName=issuer:copy
-
-#nsCaRevocationUrl    = http://www.domain.dom/ca-crl.pem
-#nsBaseUrl
-#nsRevocationUrl
-#nsRenewalUrl
-#nsCaPolicyUrl
-#nsSslServerName
-
 [ v3_req ]
 
 # Extensions to add to a certificate request
@@ -247,25 +238,6 @@ authorityKeyIdentifier=keyid:always,issuer:always
 # So we do this instead.
 basicConstraints = CA:true
 
-# Key usage: this is typical for a CA certificate. However since it will
-# prevent it being used as an test self-signed certificate it is best
-# left out by default.
-# keyUsage = cRLSign, keyCertSign
-
-# Some might want this also
-# nsCertType = sslCA, emailCA
-
-# Include email address in subject alt name: another PKIX recommendation
-# subjectAltName=email:copy
-# Copy issuer details
-# issuerAltName=issuer:copy
-
-# DER hex encoding of an extension: beware experts only!
-# obj=DER:02:03
-# Where 'obj' is a standard or added object
-# You can even override a supported extension:
-# basicConstraints= critical, DER:30:03:01:01:FF
-
 [ crl_ext ]
 
 # CRL extensions.
@@ -278,7 +250,7 @@ authorityKeyIdentifier=keyid:always,issuer:always
 class Certificate:
 
     def __init__(self, cadir, certname, subj, p12password, isServerCert, subjectAltNames):
-        self.cadir = self.normalize_directory_path(cadir)
+        self.cadir = os.path.realpath(self.normalize_directory_path(cadir))
         self.certname = certname
         self.subj = subj
         self.p12password = p12password
@@ -292,7 +264,7 @@ class Certificate:
             return path
 
     def execute_command(self, cmd):
-        call(cmd, shell=True, stdout=DEV_NULL, stderr=DEV_NULL)
+        call(cmd, shell=True) #, stdout=DEV_NULL, stderr=DEV_NULL)
 
     def read_file(self, filename):
         with open(filename, "r") as f:
@@ -367,7 +339,7 @@ class Certificate:
         fileOpensslCnf = target_path + "/openssl" + ".cnf"
         if not os.path.exists(fileOpensslCnf):
             opensslCnf = open(fileOpensslCnf, "w")
-            alt_names = "DNS:" + self.certname
+            alt_names = self.subjectAltNames
             opensslCnf.write(OPENSSL_CNF.format(self.cadir, self.certname, alt_names))
             opensslCnf.close()
             changed = True        
@@ -377,10 +349,10 @@ class Certificate:
 
         CURDIR = os.getcwd()
 
+        os.chdir(self.cadir)
+
         changed = False
         changes = []
-
-        os.chdir(self.cadir)
 
         target_path = self.get_target_path()
 
