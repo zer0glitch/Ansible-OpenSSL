@@ -26,22 +26,31 @@ def createCert(certname, subj, password, isServerCert, subjAltName):
     return cert
 
 
-createCert("test.openampere.com", "/CN=Test/", "abc123!@#$", True, "DNS.1=client,DNS.2=test.openamepere.com,IP.1=192.168.1.2")
-c1 = createCert("client.openampere.com", "/CN=Client/", "asdfaer13", False, "")
-createCert("client2.openampere.com", "/DC=com/DC=openampere/DC=test/CN=Client2", "asdf", False, "")
-s2 = createCert("test2.openampere.com", "/CN=Test 2", "asdf987", True, "DNS.1=client,DNS.2=test.openamepere.com,IP.1=192.168.1.2")
 
+createCert("test.openampere.com", "/CN=Test/", "testpassword", True, "DNS:client,DNS:test.openamepere.com,IP:192.168.2.2")
+print ""
+
+c1 = createCert("client.openampere.com", "/CN=Client/", "clientpassword", False, "")
+print ""
+
+createCert("client2.openampere.com", "/DC=com/DC=openampere/DC=test/CN=Client2", "client2password", False, "")
+print ""
+
+s2 = createCert("test2.openampere.com", "/CN=Test 2", "test2password", True, "DNS:client,DNS:test.openamepere.com,IP:192.168.2.2")
+print ""
+#
+keytool = Keytool(cadir, "test2.openampere.com", "test2password", "", "keystore","test2password")
+print ""
+print keytool.build_trust_store()
+
+print "Validating keytool config"
+print keytool.validate()
+
+keytool = Keytool(cadir, "client2.openampere.com", "client2password", [ "test2.openampere.com" ], "truststore","client2password")
+print keytool.build_trust_store()
+print ""
 print line
-print "Removing cert for client.openampere.com"
-c1.remove_certificate()
 
-print line
-print "Removing cert for test2.openampere.com"
-s2.remove_certificate()
-
-keytool = Keytool(cadir, "client2.openampere.com", "abc123!@#`902", [ "test.openampere.com" ])
-
-print line
 print "Validating keytool config"
 print keytool.validate()
 
@@ -52,4 +61,12 @@ print keytool.build_trust_store()
 print line
 print "Removing truststore"
 #print keytool.remove_trust_store()
+
+print line
+print "Removing cert for client.openampere.com"
+c1.remove_certificate()
+
+print line
+print "Removing cert for test2.openampere.com"
+s2.remove_certificate()
 

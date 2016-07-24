@@ -36,7 +36,7 @@ To create a certificate, you simply need to reference the CA and provide the ess
 ---
 
 - name: Create a Server Cert
-  certificate: cadir="/etc/certs" certname="server.example.com" subj="/DC=com/DC=example/CN=server/" p12password="{{some_env_var}}"
+  certificate: cadir="/etc/certs" certname="server.example.com" subj="/DC=com/DC=example/CN=server/" p12password="{{some_env_var}}" subjectAltNames="DNS:client,DNS:server.example.com,IP:192.168.2.2"
 
 - name: Create a Client Cert
   certificate: cadir="/etc/certs" certname="client.example.com" subj="/DC=com/DC=example/CN=client/" p12password="{{some_env_var}}" certtype="client"
