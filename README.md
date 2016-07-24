@@ -88,7 +88,7 @@ The keytool utility is used for creating truststores and keystores for users and
   keytool: cadir="/etc/certs" certname="host1.example.com" store_password='changeit' hosts_to_trust="host1.example.com"
 
 - name: Create a java server keystore 
-  keytool: cadir="/etc/certs" certname="host1.example.com" store_password='changeit' hosts_to_trust="host1.example.com" certtype="keystore" src_password='changeit'
+  keytool: cadir="/etc/certs" certname="host1.example.com" store_password='changeit'  certtype="keystore" src_password='changeit'
 
 
 ```
