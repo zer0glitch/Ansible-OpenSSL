@@ -78,10 +78,7 @@ Deleting the CA functions similarly:
 This will cause the CA directory to be deleted (the script doesn't care that it didn't create the directory, so suck it up).
 
 
-```yaml
----
 
-```
 The keytool utility is used for creating truststores and keystores for users and servers.   This requires the certificates have been created with the `certificate` module:
 
 ```yaml
