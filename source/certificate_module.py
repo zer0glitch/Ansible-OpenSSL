@@ -11,7 +11,7 @@ author:
     - "Richard Clayton (@rclayton-the-terrible)"
     - "James Whetsell (@zer0glitch)"
 options:
-  certdir:
+  cadir:
     description:
       - The directory to store the certificate
     required: true
