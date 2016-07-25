@@ -261,7 +261,7 @@ class Certificate:
             return path
 
     def execute_command(self, cmd):
-        call(cmd, shell=True) #, stdout=DEV_NULL, stderr=DEV_NULL)
+        call(cmd, shell=True, stdout=DEV_NULL, stderr=DEV_NULL)
 
     def read_file(self, filename):
         with open(filename, "r") as f:

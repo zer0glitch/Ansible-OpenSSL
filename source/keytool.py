@@ -27,13 +27,13 @@ class Keytool:
         logifle.close()
 
     def execute_command(self, cmd):
-        call(cmd, shell=True) #, stdout=DEV_NULL, stderr=DEV_NULL)
+        call(cmd, shell=True, stdout=DEV_NULL, stderr=DEV_NULL)
 
     def validate(self):
 
         if not os.path.exists(self.cadir):
             return dict(success=False, msg="CA directory '{0}' does not exist.".format(self.cadir))
-        elif len(self.hosts_to_trust) == 0 and self.certtype == 'truststore':
+        elif self.certtype == 'truststore' and len(self.hosts_to_trust) == 0:
             return dict(success=False, msg="No hosts specified for the truststore.")
         else:
             return dict(success=True)
@@ -104,6 +104,9 @@ class Keytool:
                     hostcert = self.resolve_certificate(self.certname)
                     cmd = TMPL_GEN_KS.format(self.certname, hostcert, truststore_path, self.store_password, self.src_password)
                     self.execute_command(cmd)
+                    os.chdir(CURDIR)
+
+                    return dict(success=success, changed=changed, changes=changes, path=truststore_path, errors=errors, msg=", ".join(errors))
 
                 for host in self.hosts_to_trust:
 
@@ -127,7 +130,8 @@ class Keytool:
 
             finally:
                 # Remove the password
-                os.remove(storepass_path)
+                if os.path.exists(storepass_path):
+                    os.remove(storepass_path)
 
         if success == False:
             os.remove(truststore_path)

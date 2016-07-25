@@ -1,6 +1,44 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+
+DOCUMENTATION = '''
+---
+module: ca
+short_description: Manages CA certificates
+description:
+    - Create, update, and delete for a CA
+author:
+    - "Richard Clayton (@rclayton-the-terrible)"
+    - "James Whetsell (@zer0glitch)"
+options:
+  certdir:
+    description:
+      - The directory to store the certificate
+    required: true
+  subj:
+    description:
+      - The CA subject
+    required: true
+  state:
+    description:
+      - To create or remove the CA. Present or absent: default is present.
+    required: false
+  force:
+    description:
+      - This will overwrite the CA
+    required: false
+requirements: [ openssl ]
+'''
+
+EXAMPLES = '''
+
+- name: Setup a CA
+  ca: certdir="/etc/certs" subj="/DC=com/DC=example/CN=CA/"
+- name: Remove a CA
+  ca: certdir="/etc/certs" subj="/CN=whatever/" state="absent"
+'''
+
 import os, shutil
 from subprocess import call
 

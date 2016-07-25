@@ -1,6 +1,56 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+DOCUMENTATION = '''
+---
+module: keytool
+short_description: Manages keystores and truststores for java
+description:
+    - Creates and Manages java keystores and truststores
+author:
+    - "Richard Clayton (@rclayton-the-terrible)"
+    - "James Whetsell (@zer0glitch)"
+options:
+  cadir:
+    description:
+      - The directory to store the certificate
+    required: true
+  certname:
+    description:
+      - The CN (common name) for the certificate
+    required: true
+  store_password:
+    description:
+      - The password for the store
+    required: true
+  host_to_trust:
+    description:
+      - A list of hsots to add to the truststore
+    required: false
+  state:
+    description:
+      - To create or remove the CA. Present or absent: default is present.
+    required: false
+  certtype:
+    description:
+      - The certificate type.  Values: keystore or truststore
+    required: false
+  src_password:
+    description:
+      - Source password for the PKCS12 certificate that is being imported
+    required: false
+requirements: [ openssl ]
+'''
+
+EXAMPLES = '''
+- name: Create a java server trustore and trust the server hosts
+  keytool: cadir="/etc/certs" certname="host1.example.com" store_password='changeit' hosts_to_trust="host1.example.com"
+
+  - name: Create a java server keystore 
+    keytool: cadir="/etc/certs" certname="host1.example.com" store_password='changeit'  certtype="keystore" src_password='changeit'
+'''
+
+
 
 from subprocess import call
 import os
@@ -30,13 +80,14 @@ class Keytool:
         logifle.close()
 
     def execute_command(self, cmd):
+        self.log(cmd)
         call(cmd, shell=True) #, stdout=DEV_NULL, stderr=DEV_NULL)
 
     def validate(self):
 
         if not os.path.exists(self.cadir):
             return dict(success=False, msg="CA directory '{0}' does not exist.".format(self.cadir))
-        elif len(self.hosts_to_trust) == 0 and self.certtype == 'truststore':
+        elif self.certtype == 'truststore' and len(self.hosts_to_trust) == 0:
             return dict(success=False, msg="No hosts specified for the truststore.")
         else:
             return dict(success=True)
@@ -107,6 +158,9 @@ class Keytool:
                     hostcert = self.resolve_certificate(self.certname)
                     cmd = TMPL_GEN_KS.format(self.certname, hostcert, truststore_path, self.store_password, self.src_password)
                     self.execute_command(cmd)
+                    os.chdir(CURDIR)
+
+                    return dict(success=success, changed=changed, changes=changes, path=truststore_path, errors=errors, msg=", ".join(errors))
 
                 for host in self.hosts_to_trust:
 
@@ -126,11 +180,13 @@ class Keytool:
 
             except Exception as e:
                 success = False
+                self.log(e)
                 errors.append(e.message)
 
             finally:
                 # Remove the password
-                os.remove(storepass_path)
+                if os.path.exists(storepass_path):
+                    os.remove(storepass_path)
 
         if success == False:
             os.remove(truststore_path)
